@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Product } from "@/lib/catalog";
 import { money } from "@/lib/catalog";
 
@@ -15,7 +16,17 @@ export function ProductCard({ product, priceMode = "retail" }: {
     <article className="product-card">
       <Link href={`/produto/${product.slug}`} className={`product-image ${product.tone}`}>
         {product.badge && <span className="badge">{product.badge}</span>}
-        <span className="product-monogram">{product.storefront === "forbody" ? "FB" : "LS"}</span>
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.imageAlt || product.name}
+            fill
+            sizes="(max-width: 620px) 100vw, (max-width: 950px) 50vw, 33vw"
+            className="product-photo"
+          />
+        ) : (
+          <span className="product-monogram">{product.storefront === "forbody" ? "FB" : "LS"}</span>
+        )}
       </Link>
       <div className="product-info">
         <p className="eyebrow">{product.category}</p>
