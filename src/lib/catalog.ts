@@ -13,6 +13,8 @@ export type Product = {
   badge?: string;
   description: string;
   tone: string;
+  image?: string;
+  imageAlt?: string;
 };
 
 export const products: Product[] = [
@@ -27,7 +29,9 @@ export const products: Product[] = [
     sizes: ["P", "M", "G", "GG"],
     badge: "Mais vendido",
     description: "Top de alta sustentação e legging de cós alto com toque macio.",
-    tone: "graphite"
+    tone: "graphite",
+    image: "/images/lassali/lassali-02.jpg",
+    imageAlt: "Modelo Lassali usando conjunto fitness rosa em frente à loja"
   },
   {
     slug: "legging-motion",
@@ -40,7 +44,9 @@ export const products: Product[] = [
     sizes: ["P", "M", "G", "GG"],
     badge: "Zero transparência",
     description: "Modelagem anatômica para treino e uso urbano.",
-    tone: "wine"
+    tone: "wine",
+    image: "/images/lassali/lassali-03.jpg",
+    imageAlt: "Modelo usando camiseta preta e legging fitness estampada"
   },
   {
     slug: "short-essencial",
@@ -52,7 +58,9 @@ export const products: Product[] = [
     colors: ["Preto", "Verde oliva", "Rosa"],
     sizes: ["P", "M", "G"],
     description: "Cós firme, comprimento seguro e liberdade de movimento.",
-    tone: "olive"
+    tone: "olive",
+    image: "/images/lassali/lassali-01.jpg",
+    imageAlt: "Modelo treinando com camiseta rosa e legging roxa"
   },
   {
     slug: "camiseta-forbody-performance",
