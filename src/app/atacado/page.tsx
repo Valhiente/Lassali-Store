@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ProductCard } from "@/components/ProductCard";
 import { products } from "@/lib/catalog";
 
 export const metadata = { title: "Atacado" };
@@ -19,11 +18,11 @@ export default function WholesalePage() {
           <div><b>02</b><h3>Aguarde a aprovação</h3><p>Nossa equipe valida o cadastro e libera o perfil.</p></div>
           <div><b>03</b><h3>Compre no atacado</h3><p>Preços exclusivos, pedido mínimo e histórico completo.</p></div>
         </div>
-        <div className="section-heading"><div><p className="eyebrow">Prévia do catálogo</p><h2>Produtos disponíveis</h2></div></div>
-        <div className="product-grid">
-          {products.filter((p) => p.storefront === "lassali").map((product) => <ProductCard key={product.slug} product={product} priceMode="wholesale" />)}
+        <div className="section-heading"><div><p className="eyebrow">Prévia do catálogo</p><h2>Categorias disponíveis</h2></div></div>
+        <div className="category-row">
+          {[...new Set(products.filter((p) => p.storefront === "lassali").map((product) => product.category))].map((category) => <span className="category-pill" key={category}>{category}</span>)}
         </div>
-        <p className="privacy-note">Na operação final, preços de atacado serão exibidos somente a CNPJs aprovados.</p>
+        <p className="privacy-note">Preços, grades e pedido mínimo são exibidos somente depois da aprovação do CNPJ.</p>
       </section>
     </main>
   );
