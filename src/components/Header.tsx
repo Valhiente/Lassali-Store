@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
+import { Heart, Search, UserRound } from "lucide-react";
+import { CartButton } from "./CartButton";
 
 export function Header() {
   return (
@@ -24,7 +25,7 @@ export function Header() {
           <button aria-label="Buscar"><Search size={20} /></button>
           <button aria-label="Favoritos"><Heart size={20} /></button>
           <Link href="/conta/entrar" aria-label="Minha conta"><UserRound size={20} /></Link>
-          <button aria-label="Sacola"><ShoppingBag size={20} /></button>
+          <CartButton />
         </div>
       </header>
     </>
