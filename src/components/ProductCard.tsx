@@ -4,11 +4,13 @@ import type { Product } from "@/lib/catalog";
 import { money } from "@/lib/catalog";
 import { AddToCartButton } from "./AddToCartButton";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, availableSkus }: { product: Product; availableSkus?: string[] }) {
+  const outOfStock = availableSkus !== undefined && availableSkus.length === 0;
   return (
     <article className="product-card">
       <Link href={`/produto/${product.slug}`} className={`product-image ${product.tone}`}>
         {product.badge && <span className="badge">{product.badge}</span>}
+        {outOfStock ? <span className="badge">Esgotado</span> : null}
         {product.image ? (
           <Image
             src={product.image}
@@ -25,11 +27,11 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="eyebrow">{product.category}</p>
         <h3><Link href={`/produto/${product.slug}`}>{product.name}</Link></h3>
         <p className="price">{money(product.retailPrice)}</p>
-        <p className="installments">ou até 3x sem juros</p>
+        <p className="installments">{outOfStock ? "Avise-me quando voltar" : "ou até 3x sem juros"}</p>
         <div className="swatches" aria-label="Cores disponíveis">
           {product.colors.map((color) => <span key={color} title={color} />)}
         </div>
-        <AddToCartButton product={product} compact />
+        <AddToCartButton product={product} compact availableSkus={availableSkus} />
       </div>
     </article>
   );
