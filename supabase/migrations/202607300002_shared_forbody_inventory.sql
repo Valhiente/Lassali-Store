@@ -62,7 +62,6 @@ revoke select on public.product_variants from anon, authenticated;
 grant select (id, product_id, sku, color, size, active, low_stock_threshold) on public.product_variants to anon, authenticated;
 
 create or replace view public.storefront_inventory
-with (security_invoker = true)
 as
 select
   v.id as variant_id,
@@ -292,6 +291,14 @@ revoke all on function public.release_inventory_reservation(uuid, uuid, text) fr
 revoke all on function public.commit_inventory_reservation(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.expire_inventory_reservations() from public, anon, authenticated;
 revoke all on function public.create_unit_stock_request(uuid, uuid, uuid, integer) from public, anon, authenticated;
+
+grant execute on function public.receive_inventory(uuid, integer, uuid, text) to service_role;
+grant execute on function public.reserve_inventory(uuid, integer, public.order_channel, text, text, uuid, uuid, timestamptz) to service_role;
+grant execute on function public.release_inventory_reservation(uuid, uuid, text) to service_role;
+grant execute on function public.commit_inventory_reservation(uuid, uuid) to service_role;
+grant execute on function public.expire_inventory_reservations() to service_role;
+grant execute on function public.create_unit_stock_request(uuid, uuid, uuid, integer) to service_role;
+grant all on public.inventory_reservations, public.inventory_movements to service_role;
 
 -- Initial Forbody catalog records. Quantities start at zero and are added only by an audited receipt.
 insert into public.categories (name, slug, storefront, position, active) values
