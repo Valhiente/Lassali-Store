@@ -46,7 +46,7 @@ npm run dev
 ```
 
 1. Crie o projeto no Supabase.
-2. Execute `supabase/migrations/202607290001_lassali_commerce.sql`.
+2. Execute, em ordem, `supabase/migrations/202607290001_lassali_commerce.sql` e `supabase/migrations/202607300002_shared_forbody_inventory.sql`.
 3. Configure as URLs permitidas do Supabase Auth para o domínio da loja.
 4. Preencha as variáveis de ambiente.
 5. Faça o primeiro acesso administrativo com `POST /api/admin/bootstrap`,
@@ -66,6 +66,18 @@ npm run dev
 - `ADMIN_BOOTSTRAP_SECRET`: somente durante a criação do primeiro admin.
 - Mercado Pago e Melhor Envio estão reservados no ambiente para a etapa de
   contratação/configuração dos respectivos serviços.
+
+## Estoque central compartilhado
+
+O estoque comprado pela Forbody fica disponível simultaneamente para o varejo em `/forbody` e para pedidos das unidades em `/unidades-forbody`. O saldo é controlado por SKU, cor e tamanho.
+
+- `stock`: saldo físico recebido;
+- `reserved_stock`: pedidos ainda não concluídos;
+- disponibilidade total: físico menos reservado;
+- disponibilidade do varejo: total menos a reserva mínima das unidades;
+- disponibilidade das unidades: total menos a reserva mínima do varejo.
+
+Entradas são registradas pelo `/admin`. Pedidos das unidades criam uma reserva de sete dias e aparecem para aprovação no painel. A aprovação baixa o saldo físico; o cancelamento ou vencimento devolve a reserva. Todas as operações ficam registradas em `inventory_movements`.
 
 ## Automação de relacionamento
 
