@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ProductCard } from "@/components/ProductCard";
 import { products } from "@/lib/catalog";
 
@@ -15,7 +16,17 @@ export default function Home() {
             <Link className="button ghost" href="/atacado">Comprar no atacado</Link>
           </div>
         </div>
-        <div className="hero-art"><span>LASSALI</span><b>MOVE</b></div>
+        <div className="hero-art">
+          <Image
+            src="/images/lassali/lassali-02.jpg"
+            alt="Moda fitness Lassali em frente à loja de Ribeirão Preto"
+            fill
+            priority
+            sizes="(max-width: 950px) 88vw, 44vw"
+            className="hero-photo"
+          />
+          <div className="hero-stamp"><span>LASSALI</span><b>MOVE</b></div>
+        </div>
       </section>
 
       <section className="benefit-strip">
@@ -36,6 +47,24 @@ export default function Home() {
         <Link href="/atacado" className="portal-card wholesale"><p>Para lojistas</p><h2>Atacado Lassali</h2><span>Cadastre seu CNPJ e acesse condições exclusivas →</span></Link>
         <Link href="/forbody" className="portal-card forbody"><p>Collab oficial</p><h2>Produtos Forbody</h2><span>Camisetas, acessórios e linha de treino →</span></Link>
         <Link href="/unidades-forbody" className="portal-card units"><p>Acesso restrito</p><h2>Portal das Unidades</h2><span>Reposição, histórico e gestão de pedidos →</span></Link>
+      </section>
+
+      <section className="editorial">
+        <div className="editorial-image">
+          <Image
+            src="/images/lassali/lassali-04.jpg"
+            alt="Look fitness colorido da Lassali para treino e uso casual"
+            fill
+            sizes="(max-width: 620px) 100vw, 45vw"
+            className="editorial-photo"
+          />
+        </div>
+        <div className="editorial-copy">
+          <p className="eyebrow">Do treino para a vida</p>
+          <h2>Movimento, cor e liberdade.</h2>
+          <p>Peças versáteis para musculação, caminhada e para os momentos em que conforto também faz parte do estilo.</p>
+          <Link className="button ghost" href="#catalogo">Explorar coleção</Link>
+        </div>
       </section>
 
       <section className="section" id="catalogo">
