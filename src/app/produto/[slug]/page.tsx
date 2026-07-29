@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { money, products } from "@/lib/catalog";
+import { ProductPurchase } from "@/components/ProductPurchase";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -28,9 +29,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
       <div className="product-detail">
         <p className="eyebrow">{product.category}</p><h1>{product.name}</h1><p className="detail-price">{money(product.retailPrice)}</p><p>{product.description}</p>
-        <fieldset><legend>Cor</legend><div className="choice-row">{product.colors.map((color) => <button key={color}>{color}</button>)}</div></fieldset>
-        <fieldset><legend>Tamanho</legend><div className="choice-row">{product.sizes.map((size) => <button key={size}>{size}</button>)}</div></fieldset>
-        <button className="button primary full">Adicionar à sacola</button>
+        <ProductPurchase product={product} />
         <div className="detail-notes"><p>✓ 10% de desconto no Pix</p><p>✓ Troca facilitada</p><p>✓ Envio para todo o Brasil</p></div>
       </div>
     </main>
