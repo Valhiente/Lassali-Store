@@ -3,6 +3,7 @@ import { products } from "@/lib/catalog";
 import { createClient, createSecretClient } from "@/lib/supabase/server";
 
 type IncomingItem = { sku?: string; slug?: string; color?: string; size?: string; quantity?: number };
+type StockRow = { sku: string; stock: number; reserved_stock: number; unit_safety_stock: number };
 
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") || 0);
@@ -24,14 +25,29 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   }, { onConflict: "session_token" }).select("id").single();
   if (error || !cart) return NextResponse.json({ error: "Cart sync failed" }, { status: 500 });
-  await secret.from("cart_items").delete().eq("cart_id", cart.id);
+
+  const forbodySkus = incoming.flatMap((item) => {
+    const product = products.find((entry) => entry.slug === item.slug);
+    return product?.storefront === "forbody" && item.sku ? [String(item.sku).slice(0, 180)] : [];
+  });
+  const { data: stockRows } = forbodySkus.length
+    ? await secret.from("product_variants").select("sku, stock, reserved_stock, unit_safety_stock").in("sku", forbodySkus)
+    : { data: [] };
+  const retailStock = new Map((stockRows as StockRow[] || []).map((row) => [row.sku, Math.max(row.stock - row.reserved_stock - row.unit_safety_stock, 0)]));
+  const rejectedSkus: string[] = [];
+
   const validItems = incoming.flatMap((item) => {
     const product = products.find((entry) => entry.slug === item.slug);
     const quantity = Math.max(1, Math.min(Number(item.quantity) || 1, 99));
-    if (!product || !item.sku || !product.colors.includes(String(item.color)) || !product.sizes.includes(String(item.size))) return [];
+    const sku = String(item.sku || "").slice(0, 180);
+    if (!product || !sku || !product.colors.includes(String(item.color)) || !product.sizes.includes(String(item.size))) return [];
+    if (product.storefront === "forbody" && (retailStock.get(sku) || 0) < quantity) {
+      rejectedSkus.push(sku);
+      return [];
+    }
     return [{
       cart_id: cart.id,
-      sku: String(item.sku).slice(0, 180),
+      sku,
       product_slug: product.slug,
       product_name: product.name,
       image_url: product.image || null,
@@ -42,13 +58,14 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     }];
   });
+  await secret.from("cart_items").delete().eq("cart_id", cart.id);
   if (validItems.length) await secret.from("cart_items").insert(validItems);
   await secret.from("commerce_events").insert({
     session_token: token,
     user_id: userId,
     event_name: "cart_updated",
     entity_id: cart.id,
-    properties: { item_count: validItems.reduce((sum, item) => sum + item.quantity, 0) },
+    properties: { item_count: validItems.reduce((sum, item) => sum + item.quantity, 0), rejected_skus: rejectedSkus },
   });
-  return NextResponse.json({ synced: true, cartId: cart.id });
+  return NextResponse.json({ synced: true, cartId: cart.id, rejectedSkus });
 }
