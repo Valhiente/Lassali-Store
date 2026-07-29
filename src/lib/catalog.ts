@@ -6,8 +6,6 @@ export type Product = {
   category: string;
   storefront: Storefront;
   retailPrice: number;
-  wholesalePrice?: number;
-  unitPrice?: number;
   colors: string[];
   sizes: string[];
   badge?: string;
@@ -24,7 +22,6 @@ export const products: Product[] = [
     category: "Conjuntos",
     storefront: "lassali",
     retailPrice: 139.9,
-    wholesalePrice: 84.9,
     colors: ["Preto", "Café", "Vinho"],
     sizes: ["P", "M", "G", "GG"],
     badge: "Mais vendido",
@@ -39,7 +36,6 @@ export const products: Product[] = [
     category: "Leggings",
     storefront: "lassali",
     retailPrice: 89.9,
-    wholesalePrice: 54.9,
     colors: ["Preto", "Azul profundo"],
     sizes: ["P", "M", "G", "GG"],
     badge: "Zero transparência",
@@ -54,7 +50,6 @@ export const products: Product[] = [
     category: "Shorts",
     storefront: "lassali",
     retailPrice: 59.9,
-    wholesalePrice: 36.9,
     colors: ["Preto", "Verde oliva", "Rosa"],
     sizes: ["P", "M", "G"],
     description: "Cós firme, comprimento seguro e liberdade de movimento.",
@@ -68,7 +63,6 @@ export const products: Product[] = [
     category: "Camisetas",
     storefront: "forbody",
     retailPrice: 69.9,
-    unitPrice: 42,
     colors: ["Preto", "Branco", "Vermelho"],
     sizes: ["P", "M", "G", "GG", "XG"],
     badge: "Forbody oficial",
@@ -81,7 +75,6 @@ export const products: Product[] = [
     category: "Bonés",
     storefront: "forbody",
     retailPrice: 59.9,
-    unitPrice: 34,
     colors: ["Preto"],
     sizes: ["Único"],
     description: "Boné estruturado com identidade oficial Forbody.",
@@ -93,7 +86,6 @@ export const products: Product[] = [
     category: "Acessórios",
     storefront: "forbody",
     retailPrice: 49.9,
-    unitPrice: 29,
     colors: ["Preto", "Vermelho"],
     sizes: ["2L"],
     description: "Hidratação para o treino inteiro com alça ergonômica.",
