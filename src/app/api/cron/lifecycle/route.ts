@@ -18,8 +18,15 @@ export async function GET(request: Request) {
   if (!secret) return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
   let sent = 0, skipped = 0, failed = 0;
-  const { data: expiredReservations, error: expirationError } = await secret.rpc("expire_inventory_reservations");
-  if (expirationError && !expirationError.message.includes("expire_inventory_reservations")) failed++;
+  const [
+    { data: expiredReservations, error: expirationError },
+    { data: expiredCheckouts, error: checkoutExpirationError },
+  ] = await Promise.all([
+    secret.rpc("expire_inventory_reservations"),
+    secret.rpc("expire_retail_checkouts"),
+  ]);
+  if (expirationError) failed++;
+  if (checkoutExpirationError) failed++;
 
   const { data: carts } = await secret.from("carts").select("id, email, recovery_stage, last_activity_at, session_token").in("status", ["active", "abandoned"]).not("email", "is", null).lt("last_activity_at", new Date(Date.now() - 3_600_000).toISOString()).limit(100);
   for (const cart of carts || []) {
@@ -100,5 +107,12 @@ export async function GET(request: Request) {
     if (result.success) sent++;
     else failed++;
   }
-  return NextResponse.json({ success: true, sent, skipped, failed, expiredReservations: expiredReservations || 0 });
+  return NextResponse.json({
+    success: true,
+    sent,
+    skipped,
+    failed,
+    expiredReservations: expiredReservations || 0,
+    expiredCheckouts: expiredCheckouts || 0,
+  });
 }

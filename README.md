@@ -64,8 +64,10 @@ npm run dev
 - `CRON_SECRET`: autenticação da rotina `/api/cron/lifecycle`.
 - `UNSUBSCRIBE_SECRET`: assinatura dos links de descadastro.
 - `ADMIN_BOOTSTRAP_SECRET`: somente durante a criação do primeiro admin.
-- Mercado Pago e Melhor Envio estão reservados no ambiente para a etapa de
-  contratação/configuração dos respectivos serviços.
+- `MERCADO_PAGO_ACCESS_TOKEN` e `MERCADO_PAGO_WEBHOOK_SECRET`: Checkout Pro e
+  validação HMAC das notificações de pagamento.
+- Melhor Envio permanece reservado para cálculo de etiqueta e frete após a
+  contratação; o endereço já é capturado e armazenado no pedido.
 
 ## Estoque central compartilhado
 
@@ -98,6 +100,11 @@ npm run typecheck
 npm run build
 ```
 
+Depois do deploy, consulte `GET /api/health`. A loja só retorna `ready` quando
+banco, URL canônica, pagamento, e-mail e segredos das rotinas estiverem
+configurados; nenhum valor sensível é exposto nessa resposta.
+
 Os produtos atuais são uma base demonstrativa criada com as imagens fornecidas.
-Preços, estoque, frete e pagamento devem ser homologados com os dados comerciais
-reais antes de liberar vendas em produção.
+Antes de liberar vendas, registre o saldo físico pelo `/admin`, configure as
+credenciais produtivas do Mercado Pago e simule uma notificação assinada. O
+checkout bloqueia produtos sem estoque e só baixa o saldo após pagamento aprovado.

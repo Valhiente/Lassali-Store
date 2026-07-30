@@ -18,13 +18,14 @@ export function verifyUnsubscribeToken(contact: string, channel: string, token: 
   return Boolean(expected && token && expected.length === token.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token)));
 }
 
-export async function sendLifecycleEmail({
+export async function sendStoreEmail({
   to,
   subject,
   title,
   intro,
   cta,
   ctaUrl,
+  transactional = false,
 }: {
   to: string;
   subject: string;
@@ -32,12 +33,13 @@ export async function sendLifecycleEmail({
   intro: string;
   cta: string;
   ctaUrl: string;
+  transactional?: boolean;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
   if (!apiKey || !from) return { success: false, error: "Resend não configurado." };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const token = unsubscribeToken(to, "email");
+  const token = transactional ? "" : unsubscribeToken(to, "email");
   const unsubscribeUrl = `${siteUrl}/marketing/unsubscribe?contact=${encodeURIComponent(to)}&channel=email&token=${token}`;
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -52,7 +54,9 @@ export async function sendLifecycleEmail({
           <h1 style="font-family:Georgia,serif;font-size:32px">${escapeHtml(title)}</h1>
           <p style="font-size:16px;line-height:1.7;color:#5f5853">${escapeHtml(intro)}</p>
           <a href="${escapeHtml(ctaUrl)}" style="display:inline-block;margin-top:18px;background:#171515;color:white;text-decoration:none;padding:15px 22px;font-size:12px;font-weight:bold">${escapeHtml(cta)}</a>
-          <p style="margin-top:34px;font-size:11px;color:#8b8580">Você recebeu esta mensagem conforme suas preferências. <a href="${unsubscribeUrl}">Cancelar estes contatos</a>.</p>
+          ${transactional
+            ? '<p style="margin-top:34px;font-size:11px;color:#8b8580">Mensagem transacional referente à sua conta ou pedido.</p>'
+            : `<p style="margin-top:34px;font-size:11px;color:#8b8580">Você recebeu esta mensagem conforme suas preferências. <a href="${unsubscribeUrl}">Cancelar estes contatos</a>.</p>`}
         </div>
       </div>`,
     }),
@@ -61,3 +65,5 @@ export async function sendLifecycleEmail({
   if (!response.ok) return { success: false, error: String(data.message || "Falha no envio.") };
   return { success: true, id: String(data.id || "") };
 }
+
+export const sendLifecycleEmail = sendStoreEmail;

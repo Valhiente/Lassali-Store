@@ -26,7 +26,7 @@ export default async function AdminPage() {
     ? await Promise.all([
         secret.from("organizations").select("*").order("created_at", { ascending: false }).limit(100),
         secret.from("account_access").select("user_id, kind, status, admin_role, profiles(full_name, email)").order("created_at", { ascending: false }).limit(100),
-        secret.from("product_variants").select("id, sku, color, size, stock, reserved_stock, retail_safety_stock, unit_safety_stock, low_stock_threshold, products!inner(name, storefront)").eq("products.storefront", "forbody").order("sku"),
+        secret.from("product_variants").select("id, sku, color, size, stock, reserved_stock, retail_safety_stock, unit_safety_stock, low_stock_threshold, products!inner(name, storefront)").order("sku"),
         secret.from("orders").select("id, created_at, status, organization_id, organizations(trade_name, legal_name), order_items(product_name, sku, quantity)").eq("channel", "forbody_unit").eq("status", "draft").order("created_at", { ascending: true }).limit(100),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
@@ -41,8 +41,8 @@ export default async function AdminPage() {
       </header>
 
       <section className="admin-section">
-        <h2>Estoque central Forbody</h2>
-        <p>O mesmo saldo abastece o varejo e as unidades. As reservas mínimas protegem cada canal sem duplicar estoque.</p>
+        <h2>Estoque central Lassali e Forbody</h2>
+        <p>Todos os produtos vendidos possuem saldo por SKU. Na linha Forbody, o mesmo estoque abastece varejo e unidades sem duplicação.</p>
         <div className="admin-list">
           {inventory.map((variant) => {
             const product = Array.isArray(variant.products) ? variant.products[0] : variant.products;
@@ -51,7 +51,7 @@ export default async function AdminPage() {
             const unitAvailable = Math.max(totalAvailable - variant.retail_safety_stock, 0);
             return <article key={variant.id}>
               <div>
-                <strong>{product?.name || variant.sku} · {variant.color || "Padrão"} · {variant.size || "Único"}</strong>
+                <strong>{product?.name || variant.sku} · {variant.color || "Padrão"} · {variant.size || "Único"} · {product?.storefront || "loja"}</strong>
                 <span>Físico: {variant.stock} · Reservado: {variant.reserved_stock} · Varejo: {retailAvailable} · Unidades: {unitAvailable}</span>
                 <span>SKU: {variant.sku}{totalAvailable <= variant.low_stock_threshold ? " · ESTOQUE BAIXO" : ""}</span>
               </div>
