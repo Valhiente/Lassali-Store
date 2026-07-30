@@ -17,7 +17,7 @@ type CartContextValue = {
   items: CartItem[];
   count: number;
   subtotal: number;
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   setQuantity: (sku: string, quantity: number) => void;
   removeItem: (sku: string) => void;
   clear: () => void;
@@ -63,11 +63,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [items, sessionToken]);
 
-  const addItem = useCallback((item: Omit<CartItem, "quantity">) => {
+  const addItem = useCallback((item: Omit<CartItem, "quantity">, quantity = 1) => {
+    const safeQuantity = Math.max(1, Math.min(Math.floor(quantity), 99));
     setItems((current) => {
       const found = current.find((entry) => entry.sku === item.sku);
-      if (found) return current.map((entry) => entry.sku === item.sku ? { ...entry, quantity: Math.min(entry.quantity + 1, 99) } : entry);
-      return [...current, { ...item, quantity: 1 }];
+      if (found) return current.map((entry) => entry.sku === item.sku ? { ...entry, quantity: Math.min(entry.quantity + safeQuantity, 99) } : entry);
+      return [...current, { ...item, quantity: safeQuantity }];
     });
   }, []);
   const setQuantity = useCallback((sku: string, quantity: number) => {
