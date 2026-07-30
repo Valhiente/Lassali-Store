@@ -3,7 +3,8 @@ import "server-only";
 import crypto from "node:crypto";
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]!);
+  const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
 export function unsubscribeToken(contact: string, channel: string) {

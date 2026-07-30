@@ -70,7 +70,7 @@ export default function Home() {
       <section className="section" id="catalogo">
         <div className="section-heading"><div><p className="eyebrow">Catálogo</p><h2>Treine do seu jeito</h2></div></div>
         <div className="category-row">
-          {["Conjuntos", "Leggings", "Tops", "Shorts", "Macaquinhos", "Jaquetas", "Outlet"].map((category) => <button key={category}>{category}</button>)}
+          {["Conjuntos", "Leggings", "Tops", "Shorts", "Macaquinhos", "Jaquetas", "Outlet"].map((category) => <button type="button" key={category}>{category}</button>)}
         </div>
       </section>
     </main>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { completeUnitInvite } from "./actions";
@@ -35,7 +35,7 @@ export default function AcceptInvitePage() {
     <main className="auth-page"><section className="auth-card">
       <p className="eyebrow">Portal Forbody</p><h1>Ativar acesso da unidade</h1>
       {success ? <><div className="form-message success">Acesso ativado com segurança.</div><Link className="button primary" href="/conta/entrar">Entrar</Link></>
-      : ready ? <form onSubmit={submit}>{message && <div className="form-message error">{message}</div>}<label>Nova senha<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label><label>Confirmar senha<input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required /></label><button className="button primary" disabled={loading}>{loading ? "Ativando..." : "Ativar unidade"}</button></form>
+      : ready ? <form onSubmit={submit}>{message && <div className="form-message error">{message}</div>}<label>Nova senha<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label><label>Confirmar senha<input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required /></label><button type="submit" className="button primary" disabled={loading}>{loading ? "Ativando..." : "Ativar unidade"}</button></form>
       : <div className="form-message error">Convite inválido, expirado ou já utilizado.</div>}
     </section></main>
   );

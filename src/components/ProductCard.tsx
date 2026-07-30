@@ -28,8 +28,8 @@ export function ProductCard({ product, availableSkus }: { product: Product; avai
         <h3><Link href={`/produto/${product.slug}`}>{product.name}</Link></h3>
         <p className="price">{money(product.retailPrice)}</p>
         <p className="installments">{outOfStock ? "Avise-me quando voltar" : "ou até 3x sem juros"}</p>
-        <div className="swatches" aria-label="Cores disponíveis">
-          {product.colors.map((color) => <span key={color} title={color} />)}
+        <div className="swatches">
+          {product.colors.map((color) => <span key={color} role="img" aria-label={color} title={color} />)}
         </div>
         <AddToCartButton product={product} compact availableSkus={availableSkus} />
       </div>

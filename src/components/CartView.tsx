@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { money } from "@/lib/catalog";
 import { useCart } from "./CartProvider";
 
@@ -33,8 +33,8 @@ export function CartView() {
         <p className="eyebrow">Sua sacola</p><h1>{items.length} {items.length === 1 ? "produto" : "produtos"}</h1>
         {items.map((item) => <article key={item.sku}>
           <div className="cart-image">{item.image ? <Image src={item.image} alt={item.name} fill sizes="120px" /> : <span>LS</span>}</div>
-          <div><strong>{item.name}</strong><span>{item.color} · {item.size}</span><button onClick={() => removeItem(item.sku)}>Remover</button></div>
-          <div className="quantity"><button onClick={() => setQuantity(item.sku, item.quantity - 1)}>−</button><span>{item.quantity}</span><button onClick={() => setQuantity(item.sku, item.quantity + 1)}>+</button></div>
+          <div><strong>{item.name}</strong><span>{item.color} · {item.size}</span><button type="button" onClick={() => removeItem(item.sku)}>Remover</button></div>
+          <div className="quantity"><button type="button" onClick={() => setQuantity(item.sku, item.quantity - 1)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => setQuantity(item.sku, item.quantity + 1)}>+</button></div>
           <b>{money(item.price * item.quantity)}</b>
         </article>)}
       </section>
@@ -47,7 +47,7 @@ export function CartView() {
           <label>WhatsApp opcional<input name="whatsapp" /></label>
           <label className="check"><input name="emailConsent" type="checkbox" /> Quero receber lembretes deste carrinho por e-mail.</label>
           <label className="check"><input name="whatsappConsent" type="checkbox" /> Quero receber lembretes pelo WhatsApp.</label>
-          <button className="button ghost">Salvar preferências</button>
+          <button type="submit" className="button ghost">Salvar preferências</button>
           {message && <small>{message}</small>}
         </form>
       </aside>

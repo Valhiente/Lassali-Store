@@ -22,8 +22,8 @@ export function Header() {
           <Link href="/unidades-forbody">Portal Unidades</Link>
         </nav>
         <div className="header-actions">
-          <button aria-label="Buscar"><Search size={20} /></button>
-          <button aria-label="Favoritos"><Heart size={20} /></button>
+          <button type="button" aria-label="Buscar"><Search size={20} /></button>
+          <button type="button" aria-label="Favoritos"><Heart size={20} /></button>
           <Link href="/conta/entrar" aria-label="Minha conta"><UserRound size={20} /></Link>
           <CartButton />
         </div>
