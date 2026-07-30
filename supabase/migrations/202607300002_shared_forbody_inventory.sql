@@ -11,6 +11,11 @@ alter table public.product_variants
   add column updated_at timestamptz not null default now(),
   add constraint reserved_not_above_physical check (reserved_stock <= stock);
 
+alter table public.product_variants
+  add column retail_available integer generated always as (
+    greatest(stock - reserved_stock - unit_safety_stock, 0)
+  ) stored;
+
 create table public.inventory_reservations (
   id uuid primary key default gen_random_uuid(),
   variant_id uuid not null references public.product_variants(id) on delete restrict,
@@ -59,9 +64,10 @@ revoke all on public.inventory_reservations, public.inventory_movements from ano
 
 -- Public clients may see catalog identity and retail availability, never internal allocation rules.
 revoke select on public.product_variants from anon, authenticated;
-grant select (id, product_id, sku, color, size, active, low_stock_threshold) on public.product_variants to anon, authenticated;
+grant select (id, product_id, sku, color, size, active, low_stock_threshold, retail_available) on public.product_variants to anon, authenticated;
 
 create or replace view public.storefront_inventory
+with (security_invoker = true)
 as
 select
   v.id as variant_id,
@@ -69,8 +75,8 @@ select
   v.sku,
   v.color,
   v.size,
-  greatest(v.stock - v.reserved_stock - v.unit_safety_stock, 0) as retail_available,
-  (v.stock - v.reserved_stock - v.unit_safety_stock) > 0 as retail_in_stock
+  v.retail_available,
+  v.retail_available > 0 as retail_in_stock
 from public.product_variants v
 where v.active;
 
