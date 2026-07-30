@@ -112,7 +112,7 @@ export function ProductPurchase({
       </fieldset>
 
       <fieldset className="variant-fieldset">
-        <div className="variant-heading"><legend>Tamanho: <strong>{size}</strong></legend><button type="button" onClick={() => setShowSizeGuide((current) => !current)}><Ruler size={15} /> Guia de tamanhos</button></div>
+        <div className="variant-heading"><span className="variant-title">Tamanho: <strong>{size}</strong></span><button type="button" onClick={() => setShowSizeGuide((current) => !current)}><Ruler size={15} /> Guia de tamanhos</button></div>
         <div className="size-options">
           {product.sizes.map((option) => {
             const sizeAvailable = availableSkus === undefined || availableSkus.includes(skuFor(product, selectedColor, option));
