@@ -40,10 +40,10 @@ export function ProductGallery({ product, selectedColor }: { product: Product; s
 
   return (
     <section className="commerce-gallery" aria-label="Galeria do produto">
-      <div className="gallery-thumbnails" role="list">
+      <div className="gallery-thumbnails">
         {media.map((item, index) => (
           <button
-            key={`${item.label}-${index}`}
+            key={`${item.label}-${item.src || item.color || "sem-imagem"}`}
             type="button"
             className={selectedIndex === index ? "active" : ""}
             aria-label={`Ver ${item.label}`}

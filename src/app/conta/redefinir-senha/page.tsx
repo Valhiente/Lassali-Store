@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { validPassword } from "@/lib/validation";
 
@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
             {message ? <div className="form-message error">{message}</div> : null}
             <label>Nova senha<input type="password" value={password} autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} required /></label>
             <label>Confirmar senha<input type="password" value={confirmation} autoComplete="new-password" onChange={(event) => setConfirmation(event.target.value)} required /></label>
-            <button className="button primary" disabled={loading}>{loading ? "Salvando..." : "Alterar senha"}</button>
+            <button type="submit" className="button primary" disabled={loading}>{loading ? "Salvando..." : "Alterar senha"}</button>
           </form>
         )}
       </section>

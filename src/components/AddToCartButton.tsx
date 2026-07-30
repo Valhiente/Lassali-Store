@@ -27,5 +27,5 @@ export function AddToCartButton({ product, compact = false, availableSkus }: { p
     window.setTimeout(() => setAdded(false), 1400);
   }
   const label = !firstAvailable ? "Esgotado" : added ? "Adicionado ✓" : compact ? "Adicionar" : "Adicionar à sacola";
-  return <button className={compact ? "quick-add" : "button primary full"} onClick={add} disabled={!firstAvailable}>{label}</button>;
+  return <button type="button" className={compact ? "quick-add" : "button primary full"} onClick={add} disabled={!firstAvailable}>{label}</button>;
 }

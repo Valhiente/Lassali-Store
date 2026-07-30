@@ -28,7 +28,7 @@ export default async function PreferencesPage({ searchParams }: { searchParams: 
         <label className="check"><input type="checkbox" name="whatsappCart" defaultChecked={enabled("whatsapp","cart_recovery")} /> Lembretes de carrinho</label>
         <label className="check"><input type="checkbox" name="whatsappOffers" defaultChecked={enabled("whatsapp","offers")} /> Novidades e ofertas</label>
       </fieldset>}
-      <button className="button primary">Salvar preferências</button>
+      <button type="submit" className="button primary">Salvar preferências</button>
     </form>
     <Link href="/conta">Voltar à conta</Link>
   </section></main>;

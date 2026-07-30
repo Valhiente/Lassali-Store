@@ -20,7 +20,7 @@ export function AdminActionForm({
       {state.error && <p className="admin-feedback error">{state.error}</p>}
       {state.success && <p className="admin-feedback success">{state.success}</p>}
       {children}
-      <button className="button primary" disabled={pending}>{pending ? "Salvando..." : label}</button>
+      <button type="submit" className="button primary" disabled={pending}>{pending ? "Salvando..." : label}</button>
     </form>
   );
 }

@@ -18,7 +18,7 @@ export default async function AccountPage() {
     <main className="account-page">
       <header className="account-header">
         <div><p className="eyebrow">Minha conta</p><h1>Olá, {account.fullName.split(" ")[0]}</h1></div>
-        <form action={logout}><button className="button ghost">Sair</button></form>
+        <form action={logout}><button type="submit" className="button ghost">Sair</button></form>
       </header>
       <section className="account-grid">
         <article><span>Perfil</span><strong>{labels[account.kind]}</strong><small>Status: {account.status}</small></article>

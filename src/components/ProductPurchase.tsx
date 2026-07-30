@@ -78,7 +78,7 @@ export function ProductPurchase({
       </div>
       {product.badge ? <span className="commerce-badge">{product.badge}</span> : null}
       <h1>{product.name}</h1>
-      <div className="rating-row" aria-label={product.reviewCount ? `${product.rating} de 5` : "Produto ainda sem avaliações"}>
+      <div className="rating-row">
         <span>{product.reviewCount ? product.rating?.toFixed(1) : "Novo"}</span>
         <span className="stars">★★★★★</span>
         <a href="#avaliacoes">{product.reviewCount ? `(${product.reviewCount})` : "Seja a primeira pessoa a avaliar"}</a>
