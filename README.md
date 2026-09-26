@@ -66,6 +66,10 @@ npm run dev
 - `ADMIN_BOOTSTRAP_SECRET`: somente durante a criação do primeiro admin.
 - `MERCADO_PAGO_ACCESS_TOKEN` e `MERCADO_PAGO_WEBHOOK_SECRET`: Checkout Pro e
   validação HMAC das notificações de pagamento.
+- `MERCADO_PAGO_ENVIRONMENT`: use `test` na homologação e `production` somente
+  depois da compra de teste aprovada.
+- `LASSALI_SHIPPING_FLAT_RATE`: valor de frete em reais; use `0` apenas quando a
+  operação realmente oferecer entrega gratuita ou retirada sem custo.
 - Melhor Envio permanece reservado para cálculo de etiqueta e frete após a
   contratação; o endereço já é capturado e armazenado no pedido.
 
@@ -106,5 +110,7 @@ configurados; nenhum valor sensível é exposto nessa resposta.
 
 Os produtos atuais são uma base demonstrativa criada com as imagens fornecidas.
 Antes de liberar vendas, registre o saldo físico pelo `/admin`, configure as
-credenciais produtivas do Mercado Pago e simule uma notificação assinada. O
-checkout bloqueia produtos sem estoque e só baixa o saldo após pagamento aprovado.
+credenciais do Mercado Pago, defina o frete e simule uma notificação assinada.
+O checkout bloqueia produtos sem estoque e só baixa o saldo após pagamento
+aprovado. Homologue primeiro com `MERCADO_PAGO_ENVIRONMENT=test`; depois troque
+o token, a chave de webhook e o ambiente para produção no mesmo redeploy.

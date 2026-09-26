@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { configuredShippingRate } from "@/lib/mercado-pago";
 import { createSecretClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,12 @@ export async function GET() {
   const checks = {
     database: !error,
     canonicalUrl: Boolean(process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://")),
-    payments: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN && process.env.MERCADO_PAGO_WEBHOOK_SECRET),
+    payments: Boolean(
+      process.env.MERCADO_PAGO_ACCESS_TOKEN &&
+      process.env.MERCADO_PAGO_WEBHOOK_SECRET &&
+      ["test", "production"].includes(process.env.MERCADO_PAGO_ENVIRONMENT || "") &&
+      configuredShippingRate() !== null
+    ),
     transactionalEmail: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
     lifecycleCron: Boolean(process.env.CRON_SECRET),
     unsubscribeSigning: Boolean(process.env.UNSUBSCRIBE_SECRET),

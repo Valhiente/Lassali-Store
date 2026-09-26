@@ -1,30 +1,34 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import {
+  mercadoPagoEnvironment,
+  normalizePaymentStatus,
+  validateMercadoPagoSignature,
+} from "@/lib/mercado-pago";
 import { createSecretClient } from "@/lib/supabase/server";
 import { sendStoreEmail } from "@/lib/marketing";
 
 function validSignature(request: Request, dataId: string) {
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-  const signature = request.headers.get("x-signature") || "";
-  const requestId = request.headers.get("x-request-id") || "";
-  const parts = Object.fromEntries(
-    signature.split(",").map((part) => {
-      const [key, value] = part.trim().split("=");
-      return [key, value];
-    }),
-  );
-  if (!secret || !parts.ts || !parts.v1 || !requestId || !dataId) return false;
-  const timestamp = Number(parts.ts);
-  if (!Number.isFinite(timestamp) || Math.abs(Date.now() - timestamp * 1000) > 5 * 60_000) return false;
-  const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${parts.ts};`;
-  const expected = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
-  return expected.length === parts.v1.length &&
-    crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1));
+  return validateMercadoPagoSignature({
+    dataId,
+    requestId: request.headers.get("x-request-id") || "",
+    signature: request.headers.get("x-signature") || "",
+    secret: secret || "",
+  });
 }
 
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > 50_000) {
+    return NextResponse.json({ error: "Payload muito grande." }, { status: 413 });
+  }
   const body = await request.json().catch(() => null);
-  const dataId = String(body?.data?.id || new URL(request.url).searchParams.get("data.id") || "");
+  const queryDataId = new URL(request.url).searchParams.get("data.id") || "";
+  const bodyDataId = String(body?.data?.id || "");
+  if (queryDataId && bodyDataId && queryDataId !== bodyDataId) {
+    return NextResponse.json({ error: "Identificador divergente." }, { status: 400 });
+  }
+  const dataId = queryDataId || bodyDataId;
   if (!validSignature(request, dataId)) {
     return NextResponse.json({ error: "Assinatura inválida." }, { status: 401 });
   }
@@ -44,6 +48,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Pagamento não consultado." }, { status: 502 });
   }
   const payment = await paymentResponse.json();
+  const expectedLiveMode = mercadoPagoEnvironment() === "production";
+  if (payment.live_mode !== expectedLiveMode || payment.currency_id !== "BRL") {
+    return NextResponse.json({ error: "Ambiente ou moeda do pagamento inválidos." }, { status: 409 });
+  }
   const orderId = String(payment.external_reference || payment.metadata?.order_id || "");
   if (!/^[0-9a-f-]{36}$/i.test(orderId)) {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
@@ -56,16 +64,18 @@ export async function POST(request: Request) {
   if (!order || Math.abs(Number(order.total) - Number(payment.transaction_amount)) > 0.01) {
     return NextResponse.json({ error: "Valor do pagamento divergente." }, { status: 409 });
   }
-  if (payment.status !== "approved") {
-    await secret
+  const paymentStatus = normalizePaymentStatus(payment.status);
+  if (paymentStatus !== "approved") {
+    let update = secret
       .from("orders")
       .update({
-        payment_status: payment.status === "rejected" ? "rejected" : "pending",
+        payment_status: paymentStatus,
         payment_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", orderId)
-      .neq("payment_status", "approved");
+      .eq("id", orderId);
+    if (paymentStatus !== "refunded") update = update.neq("payment_status", "approved");
+    await update;
     return NextResponse.json({ received: true });
   }
   const { data: changed, error } = await secret.rpc("confirm_retail_payment", {

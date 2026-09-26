@@ -48,7 +48,7 @@ export function CheckoutForm() {
       <p className="eyebrow">Checkout seguro</p>
       <h1>Entrega e pagamento</h1>
       <div className="status-banner">
-        {items.length} {items.length === 1 ? "produto" : "produtos"} · <strong>{money(subtotal)}</strong>
+        {items.length} {items.length === 1 ? "produto" : "produtos"} · Subtotal <strong>{money(subtotal)}</strong>
       </div>
       <form className="auth-form" onSubmit={submit}>
         <label>Nome de quem receberá<input name="fullName" autoComplete="name" required /></label>
