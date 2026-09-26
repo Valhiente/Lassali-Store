@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { configuredShippingRate, mercadoPagoEnvironment } from "@/lib/mercado-pago";
 import { createClient, createSecretClient } from "@/lib/supabase/server";
 
 type CheckoutBody = {
@@ -75,21 +76,46 @@ export async function POST(request: Request) {
   const orderId = String(checkout.orderId);
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!accessToken || !siteUrl?.startsWith("https://")) {
+  const shippingRate = configuredShippingRate();
+  if (!accessToken || !siteUrl?.startsWith("https://") || shippingRate === null) {
     await secret.rpc("cancel_retail_checkout", {
       p_order_id: orderId,
       p_reason: "Provedor de pagamento não configurado",
     });
     return NextResponse.json(
-      { error: "O pagamento ainda não está habilitado no ambiente de produção." },
+      { error: "Pagamento ou entrega ainda não configurados neste ambiente." },
       { status: 503 },
     );
   }
 
-  const { data: items } = await secret
+  const { data: items, error: itemsError } = await secret
     .from("order_items")
-    .select("product_name, quantity, unit_price")
+    .select("sku, product_name, quantity, unit_price")
     .eq("order_id", orderId);
+  if (itemsError || !items?.length) {
+    await secret.rpc("cancel_retail_checkout", {
+      p_order_id: orderId,
+      p_reason: "Pedido sem itens válidos para pagamento",
+    });
+    return NextResponse.json({ error: "Não foi possível preparar os itens do pedido." }, { status: 409 });
+  }
+
+  const total = Number(checkout.total) + shippingRate;
+  const { error: totalError } = await secret
+    .from("orders")
+    .update({ shipping: shippingRate, total, updated_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .eq("user_id", userId)
+    .eq("payment_status", "pending");
+  if (totalError) {
+    await secret.rpc("cancel_retail_checkout", {
+      p_order_id: orderId,
+      p_reason: "Falha ao registrar frete do checkout",
+    });
+    return NextResponse.json({ error: "Não foi possível calcular o total do pedido." }, { status: 409 });
+  }
+
+  const expiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
   const preferenceResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
     method: "POST",
     headers: {
@@ -99,13 +125,25 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       items: (items || []).map((item) => ({
-        id: orderId,
+        id: item.sku,
         title: item.product_name,
         currency_id: "BRL",
         quantity: item.quantity,
         unit_price: Number(item.unit_price),
       })),
       payer: { email },
+      shipments: {
+        cost: shippingRate,
+        mode: "not_specified",
+        receiver_address: {
+          zip_code: shipping.postalCode,
+          street_name: shipping.street,
+          street_number: shipping.number,
+          city_name: shipping.city,
+          state_name: shipping.state,
+          country_name: "Brasil",
+        },
+      },
       external_reference: orderId,
       back_urls: {
         success: `${siteUrl}/checkout/sucesso?order=${orderId}`,
@@ -113,6 +151,8 @@ export async function POST(request: Request) {
         failure: `${siteUrl}/checkout?status=failure`,
       },
       auto_return: "approved",
+      expires: true,
+      expiration_date_to: expiresAt,
       notification_url: `${siteUrl}/api/webhooks/mercado-pago`,
       statement_descriptor: "LASSALI STORE",
       metadata: { order_id: orderId, user_id: userId },
@@ -123,7 +163,10 @@ export async function POST(request: Request) {
   const preference = preferenceResponse
     ? await preferenceResponse.json().catch(() => ({}))
     : {};
-  if (!preferenceResponse?.ok || typeof preference.init_point !== "string") {
+  const checkoutUrl = mercadoPagoEnvironment() === "production"
+    ? preference.init_point
+    : preference.sandbox_init_point;
+  if (!preferenceResponse?.ok || typeof checkoutUrl !== "string") {
     await secret.rpc("cancel_retail_checkout", {
       p_order_id: orderId,
       p_reason: "Falha ao criar preferência no Mercado Pago",
@@ -135,5 +178,5 @@ export async function POST(request: Request) {
     .from("orders")
     .update({ payment_reference: String(preference.id), updated_at: new Date().toISOString() })
     .eq("id", orderId);
-  return NextResponse.json({ orderId, checkoutUrl: preference.init_point });
+  return NextResponse.json({ orderId, checkoutUrl });
 }
