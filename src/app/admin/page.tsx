@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 import { createSecretClient } from "@/lib/supabase/server";
 import { AdminActionForm } from "@/components/AdminForms";
-import { inviteForbodyUnit, receiveInventory, reviewOrganization, reviewUnitStockOrder, updateAccountAccess, updateInventoryPolicy } from "./actions";
+import { getMercadoPagoCheckoutConfig } from "@/lib/checkout-config";
+import { inviteForbodyUnit, receiveInventory, reviewOrganization, reviewUnitStockOrder, saveMercadoPagoCheckout, updateAccountAccess, updateInventoryPolicy, verifyMercadoPagoCheckout } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administração" };
@@ -32,6 +33,9 @@ export default async function AdminPage() {
     : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const inventory = (variants || []) as unknown as InventoryRow[];
   const canStock = admin.adminRole === "full_admin" || admin.adminRole === "stock";
+  const canManagePayments = admin.adminRole === "full_admin" || admin.adminRole === "finance";
+  const paymentConfig = await getMercadoPagoCheckoutConfig();
+  const paymentReady = paymentConfig.enabled && Boolean(paymentConfig.accessToken && paymentConfig.webhookSecret && paymentConfig.flatShipping !== null);
 
   return (
     <main className="admin-page">
@@ -39,6 +43,31 @@ export default async function AdminPage() {
         <div><p className="eyebrow">Lassali Commerce</p><h1>Administração</h1><p>{admin.fullName} · {admin.adminRole}</p></div>
         <a className="button ghost" href="/conta">Minha conta</a>
       </header>
+
+      <section className="admin-section payment-settings">
+        <div className="admin-section-title">
+          <div><p className="eyebrow">Pagamento integrado</p><h2>Checkout Mercado Pago</h2></div>
+          <span className={paymentReady ? "integration-status ready" : "integration-status pending"}>{paymentReady ? "Ativo" : "Configuração pendente"}</span>
+        </div>
+        <p>Configure o Checkout Pro real sem colocar credenciais no código. Os segredos ficam criptografados e nunca voltam a aparecer na tela.</p>
+        <div className="integration-summary">
+          <span><strong>Ambiente</strong>{paymentConfig.environment === "production" ? "Produção" : "Teste"}</span>
+          <span><strong>Frete fixo</strong>{paymentConfig.flatShipping === null ? "Não definido" : paymentConfig.flatShipping.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+          <span><strong>Access Token</strong>{paymentConfig.accessToken ? "Configurado" : "Pendente"}</span>
+          <span><strong>Webhook</strong>{paymentConfig.webhookSecret ? "Configurado" : "Pendente"}</span>
+        </div>
+        {canManagePayments ? <>
+          <AdminActionForm action={saveMercadoPagoCheckout} label="Validar e salvar configuração" className="admin-form-grid payment-form">
+            <label>Ambiente<select name="environment" defaultValue={paymentConfig.environment}><option value="test">Teste</option><option value="production">Produção real</option></select></label>
+            <label>Frete fixo (R$)<input name="flatShipping" inputMode="decimal" defaultValue={paymentConfig.flatShipping ?? 24.9} required /></label>
+            <label>Access Token<input name="accessToken" type="password" autoComplete="new-password" placeholder={paymentConfig.accessToken ? "Configurado — deixe vazio para manter" : "TEST-... ou APP_USR-..."} /></label>
+            <label>Assinatura secreta do webhook<input name="webhookSecret" type="password" autoComplete="new-password" placeholder={paymentConfig.webhookSecret ? "Configurada — deixe vazio para manter" : "Cole a assinatura secreta"} /></label>
+            <label className="check payment-toggle"><input name="enabled" type="checkbox" defaultChecked={paymentConfig.enabled} /> Ativar checkout após validar</label>
+            <small>Webhook: <code>{`${process.env.NEXT_PUBLIC_SITE_URL || "https://lassali-store.vercel.app"}/api/webhooks/mercado-pago`}</code></small>
+          </AdminActionForm>
+          <AdminActionForm action={verifyMercadoPagoCheckout} label="Verificar conexão real" className="verify-payment-form" />
+        </> : <p>Somente os perfis administrador geral e financeiro podem alterar pagamentos.</p>}
+      </section>
 
       <section className="admin-section">
         <h2>Estoque central Lassali e Forbody</h2>
