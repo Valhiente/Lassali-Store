@@ -10,7 +10,7 @@ export function AdminActionForm({
   className = "",
 }: {
   action: (state: AdminState, data: FormData) => Promise<AdminState>;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   label: string;
   className?: string;
 }) {

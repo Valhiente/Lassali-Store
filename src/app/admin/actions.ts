@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth";
 import { createSecretClient } from "@/lib/supabase/server";
+import { getMercadoPagoCheckoutConfig } from "@/lib/checkout-config";
 import { validCnpj } from "@/lib/validation";
 
 export type AdminState = { error?: string; success?: string };
@@ -21,6 +22,76 @@ function canManage(adminRole: string | null) {
 
 function canManageStock(adminRole: string | null) {
   return adminRole === "full_admin" || adminRole === "stock";
+}
+
+function canManagePayments(adminRole: string | null) {
+  return adminRole === "full_admin" || adminRole === "finance";
+}
+
+async function validateMercadoPagoToken(accessToken: string) {
+  const response = await fetch("https://api.mercadopago.com/users/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(15_000),
+    cache: "no-store",
+  }).catch(() => null);
+  if (!response?.ok) return null;
+  const account = await response.json().catch(() => null);
+  return account && typeof account.id === "number"
+    ? { id: account.id, nickname: typeof account.nickname === "string" ? account.nickname : "Conta Mercado Pago" }
+    : null;
+}
+
+export async function saveMercadoPagoCheckout(_state: AdminState, formData: FormData): Promise<AdminState> {
+  const actor = await requireAdmin();
+  if (!canManagePayments(actor.adminRole)) return { error: "Seu perfil não pode configurar pagamentos." };
+  const environment = value(formData, "environment", 20);
+  const flatShipping = Number(value(formData, "flatShipping", 20).replace(",", "."));
+  const enabled = formData.get("enabled") === "on";
+  const accessToken = value(formData, "accessToken", 500);
+  const webhookSecret = value(formData, "webhookSecret", 500);
+  if (!["test", "production"].includes(environment)) return { error: "Escolha um ambiente válido." };
+  if (!Number.isFinite(flatShipping) || flatShipping < 0 || flatShipping > 100000) return { error: "Informe um frete válido." };
+
+  const current = await getMercadoPagoCheckoutConfig();
+  const effectiveToken = accessToken || current.accessToken;
+  const effectiveWebhookSecret = webhookSecret || current.webhookSecret;
+  if (enabled && (!effectiveToken || !effectiveWebhookSecret)) {
+    return { error: "Para ativar, informe o Access Token e a assinatura secreta do webhook." };
+  }
+  if (effectiveToken) {
+    if (environment === "test" && !effectiveToken.startsWith("TEST-")) {
+      return { error: "O ambiente de teste exige um Access Token iniciado por TEST-." };
+    }
+    if (environment === "production" && effectiveToken.startsWith("TEST-")) {
+      return { error: "Não é possível ativar produção com uma credencial de teste." };
+    }
+    const account = await validateMercadoPagoToken(effectiveToken);
+    if (!account) return { error: "O Mercado Pago recusou o Access Token. Confira a credencial." };
+  }
+
+  const secret = createSecretClient();
+  if (!secret) return { error: "Serviço administrativo indisponível." };
+  const { error } = await secret.rpc("set_mercado_pago_checkout_config", {
+    p_environment: environment,
+    p_flat_shipping: flatShipping,
+    p_enabled: enabled,
+    p_access_token: accessToken,
+    p_webhook_secret: webhookSecret,
+    p_actor_user_id: actor.userId,
+  });
+  if (error) return { error: "Não foi possível salvar a integração de pagamento." };
+  revalidatePath("/admin");
+  return { success: enabled ? "Checkout salvo, validado e ativado." : "Configuração salva com o checkout desativado." };
+}
+
+export async function verifyMercadoPagoCheckout(_state: AdminState, _formData: FormData): Promise<AdminState> {
+  const actor = await requireAdmin();
+  if (!canManagePayments(actor.adminRole)) return { error: "Seu perfil não pode verificar pagamentos." };
+  const config = await getMercadoPagoCheckoutConfig();
+  if (!config.accessToken) return { error: "Nenhum Access Token foi configurado." };
+  const account = await validateMercadoPagoToken(config.accessToken);
+  if (!account) return { error: "A conexão real com o Mercado Pago falhou." };
+  return { success: `Conexão real confirmada: ${account.nickname} · conta ${account.id}.` };
 }
 
 export async function reviewOrganization(_state: AdminState, formData: FormData): Promise<AdminState> {

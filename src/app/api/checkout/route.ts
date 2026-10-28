@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { configuredShippingRate, mercadoPagoEnvironment } from "@/lib/mercado-pago";
+import { getMercadoPagoCheckoutConfig } from "@/lib/checkout-config";
 import { createClient, createSecretClient } from "@/lib/supabase/server";
 
 type CheckoutBody = {
@@ -74,10 +74,11 @@ export async function POST(request: Request) {
   }
 
   const orderId = String(checkout.orderId);
-  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const paymentConfig = await getMercadoPagoCheckoutConfig();
+  const accessToken = paymentConfig.accessToken;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const shippingRate = configuredShippingRate();
-  if (!accessToken || !siteUrl?.startsWith("https://") || shippingRate === null) {
+  const shippingRate = paymentConfig.flatShipping;
+  if (!paymentConfig.enabled || !accessToken || !siteUrl?.startsWith("https://") || shippingRate === null) {
     await secret.rpc("cancel_retail_checkout", {
       p_order_id: orderId,
       p_reason: "Provedor de pagamento não configurado",
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
   const preference = preferenceResponse
     ? await preferenceResponse.json().catch(() => ({}))
     : {};
-  const checkoutUrl = mercadoPagoEnvironment() === "production"
+  const checkoutUrl = paymentConfig.environment === "production"
     ? preference.init_point
     : preference.sandbox_init_point;
   if (!preferenceResponse?.ok || typeof checkoutUrl !== "string") {

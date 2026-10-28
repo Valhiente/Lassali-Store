@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import {
-  mercadoPagoEnvironment,
   normalizePaymentStatus,
   validateMercadoPagoSignature,
 } from "@/lib/mercado-pago";
+import { getMercadoPagoCheckoutConfig } from "@/lib/checkout-config";
 import { createSecretClient } from "@/lib/supabase/server";
 import { sendStoreEmail } from "@/lib/marketing";
 
-function validSignature(request: Request, dataId: string) {
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+function validSignature(request: Request, dataId: string, secret: string) {
   return validateMercadoPagoSignature({
     dataId,
     requestId: request.headers.get("x-request-id") || "",
     signature: request.headers.get("x-signature") || "",
-    secret: secret || "",
+    secret,
   });
 }
 
@@ -29,13 +28,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Identificador divergente." }, { status: 400 });
   }
   const dataId = queryDataId || bodyDataId;
-  if (!validSignature(request, dataId)) {
+  const paymentConfig = await getMercadoPagoCheckoutConfig();
+  if (!paymentConfig.enabled || !validSignature(request, dataId, paymentConfig.webhookSecret)) {
     return NextResponse.json({ error: "Assinatura inválida." }, { status: 401 });
   }
   if (!String(body?.type || body?.topic || "").includes("payment")) {
     return NextResponse.json({ received: true });
   }
-  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const accessToken = paymentConfig.accessToken;
   const secret = createSecretClient();
   if (!accessToken || !secret) {
     return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Pagamento não consultado." }, { status: 502 });
   }
   const payment = await paymentResponse.json();
-  const expectedLiveMode = mercadoPagoEnvironment() === "production";
+  const expectedLiveMode = paymentConfig.environment === "production";
   if (payment.live_mode !== expectedLiveMode || payment.currency_id !== "BRL") {
     return NextResponse.json({ error: "Ambiente ou moeda do pagamento inválidos." }, { status: 409 });
   }
